@@ -111,7 +111,7 @@ class ASLClassifier(object):
                 # input layer (specify input shape)
                 layers.MaxPool2D(pool_size=(2, 2)),
                 # block 2
-                layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'),
+                layers.Conv2D(input_shape=self._input_shape, filters=64, kernel_size=(3, 3), activation='relu', padding='same'),
                 layers.MaxPool2D(pool_size=(2, 2)),
                 # # block 3
                 # layers.Conv2D(filters = 128, kernel_size=(3,3), activation='relu', padding='same'),
@@ -119,15 +119,17 @@ class ASLClassifier(object):
                 layers.Dropout(0.4),
                 layers.Flatten(),
                 layers.Dense(128, activation='relu'),
-                layers.Dense(1, activation='sigmoid')
+                layers.Dense(29, activation='sigmoid')
             ])
         self._model.compile(loss='categorical_crossentropy', optimizer=model_optimizer, metrics=['accuracy'])
 
     """
     Train the model on the provided dataset
     """
-    def train(self, epochs):
-        pass
+    def train(self, epochs=20, early_stop=None):  # TODO: Add option for early stopping
+        if self._model is None:
+            raise AttributeError("No model has been compiled! Call '<ASLClassifier>.compile_model()'")
+        return self._model.fit(self._data['train_set'], epochs=epochs, validation_data=self._data['test_set'])
 
     """
     Identify a provided image
