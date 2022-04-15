@@ -5,16 +5,17 @@ from tensorflow.keras import layers, Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 
-
 class ASLClassifier(object):
     """
-    creates the model object
+    creates the model object # TODO: Actually comment this
     """
     def __init__(self):
         self._data = {
             'train_set': [],
             'test_set': []
         }
+        self._model = None
+        self._input_shape = None
 
     @property
     def train_set(self):
@@ -24,9 +25,13 @@ class ASLClassifier(object):
     def test_set(self):
         return self._data['test_set']
 
+    @property
+    def model(self):
+        return self._model
+
 
     """
-    Create the train/test datasets 
+    Create the train/test datasets (Relies heavily on Tensorflow's ImageDataGenerator: https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator)
     """
     def load_dataset(self, path_to_train, split=0.3, img_shape=(200, 200, 3), batch_size=32, image_gen=None):
         if not exists(path_to_train):
@@ -38,6 +43,7 @@ class ASLClassifier(object):
         else:
             img_gen = ImageDataGenerator(
                 rescale=1.0/255.0,
+                zca_whitening=True,
                 horizontal_flip=True,
                 vertical_flip=True,
                 validation_split=split
@@ -65,6 +71,8 @@ class ASLClassifier(object):
             shuffle=False
         )
 
+        self._input_shape = img_shape
+
 
     def display_25_img(self, img_set="train_set"):
         if img_set != "train_set" and img_set != "test_set":
@@ -76,6 +84,45 @@ class ASLClassifier(object):
             ax = plt.subplot(5, 5, i+1)
             plt.imshow(images[i])
             plt.axis('off')
+
+    """
+    Creates and Compiles the model
+    """
+    def compile_model(self, seq_model=None, model_layers=None, model_optimizer='Adam'):
+        if self._input_shape is None:
+            raise AttributeError("No dataset has been loaded")
+
+        if seq_model is not None and layers is not None:
+            raise ValueError("<seq_model: keras.Sequential> and <layers: list> are mutually exclusive! Provide one or the other or neither.")
+
+        if seq_model is not None and isinstance(seq_model, Sequential):
+            self._model = seq_model
+        elif layers is not None and isinstance(layers, list):
+            self._model = Sequential(model_layers)
+
+        else:
+            # Without any alternative model being specified, default
+            self._model = Sequential([
+                layers.Conv2D(input_shape=self._input_shape, filters=16, kernel_size=(3, 3), activation='relu', padding='same'),
+                # input layer (specify input shape)
+                layers.MaxPool2D(pool_size=(2, 2)),
+                # block 1
+                layers.Conv2D(input_shape=self._input_shape, filters=32, kernel_size=(3, 3), activation='relu', padding='same'),
+                # input layer (specify input shape)
+                layers.MaxPool2D(pool_size=(2, 2)),
+                # block 2
+                layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'),
+                layers.MaxPool2D(pool_size=(2, 2)),
+                # # block 3
+                # layers.Conv2D(filters = 128, kernel_size=(3,3), activation='relu', padding='same'),
+                # layers.MaxPool2D(pool_size=(2,2)),
+                layers.Dropout(0.4),
+                layers.Flatten(),
+                layers.Dense(128, activation='relu'),
+                layers.Dense(1, activation='sigmoid')
+            ])
+        self._model.compile(loss='categorical_crossentropy', optimizer=model_optimizer, metrics=['accuracy'])
+
     """
     Train the model on the provided dataset
     """
@@ -87,8 +134,6 @@ class ASLClassifier(object):
     """
     def ident(self, img):
         pass
-
-
 
 
     """
