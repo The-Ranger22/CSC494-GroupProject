@@ -20,6 +20,9 @@ class ASLClassifier(object):
         }
         self._model = None
         self._input_shape = None
+        self._kernel_size = (5, 5)
+
+    # region Properties
 
     @property
     def train_set(self):
@@ -32,7 +35,7 @@ class ASLClassifier(object):
     @property
     def model(self):
         return self._model
-
+    # endregion
 
     """
     Create the train/test datasets (Relies heavily on Tensorflow's ImageDataGenerator: https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator)
@@ -106,19 +109,20 @@ class ASLClassifier(object):
         else:
             # Without any alternative model being specified, default
             self._model = Sequential([
-                layers.Conv2D(input_shape=self._input_shape, filters=16, kernel_size=(3, 3), activation='relu', padding='same'),
-                # input layer (specify input shape)
+                layers.Conv2D(input_shape=self._input_shape, filters=16, kernel_size=self._kernel_size, activation='relu', padding='same'),
                 layers.MaxPool2D(pool_size=(2, 2)),
+                layers.Dropout(0.4),
                 # block 1
-                layers.Conv2D(input_shape=self._input_shape, filters=32, kernel_size=(3, 3), activation='relu', padding='same'),
-                # input layer (specify input shape)
+                layers.Conv2D(filters=32, kernel_size=self._kernel_size, activation='relu', padding='same'),
                 layers.MaxPool2D(pool_size=(2, 2)),
+                layers.Dropout(0.4),
                 # block 2
-                layers.Conv2D(input_shape=self._input_shape, filters=64, kernel_size=(3, 3), activation='relu', padding='same'),
+                layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
                 layers.MaxPool2D(pool_size=(2, 2)),
-                # # block 3
-                # layers.Conv2D(filters = 128, kernel_size=(3,3), activation='relu', padding='same'),
-                # layers.MaxPool2D(pool_size=(2,2)),
+                layers.Dropout(0.4),
+                # block 3
+                layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
+                layers.MaxPool2D(pool_size=(2,2)),
                 layers.Dropout(0.4),
                 layers.Flatten(),
                 layers.Dense(128, activation='relu'),
@@ -147,9 +151,9 @@ class ASLClassifier(object):
     """
     def performance_report(self, prediction):
 
-        print('Classification report: \n', classification_report(prediction, self.test_set.classes))
-        print('Confusion_matrix: \n', confusion_matrix(prediction, self.test_set.classes))
-        sns.set(rc={'figure.figsize': (15, 8)})
-        sns.heatmap(confusion_matrix(prediction, self.test_set.classes), annot=True)
+        print('Classification report: \n', classification_report(prediction, self._data['test_set'].classes))
+        # print('Confusion_matrix: \n', confusion_matrix(prediction, self._data['test_set'].classes))
+        sns.set(rc={'figure.figsize': (15, 15)})
+        sns.heatmap(confusion_matrix(prediction, self._data['test_set'].classes), annot=True)
 
 
