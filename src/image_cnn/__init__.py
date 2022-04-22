@@ -3,7 +3,11 @@ from os.path import exists
 from os import scandir
 from tensorflow.keras import layers, Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import classification_report, confusion_matrix
+from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 class ASLClassifier(object):
     """
@@ -43,9 +47,8 @@ class ASLClassifier(object):
         else:
             img_gen = ImageDataGenerator(
                 rescale=1.0/255.0,
-                zca_whitening=True,
-                horizontal_flip=True,
-                vertical_flip=True,
+                horizontal_flip=False,
+                vertical_flip=False,
                 validation_split=split
             )
 
@@ -126,7 +129,8 @@ class ASLClassifier(object):
     """
     Train the model on the provided dataset
     """
-    def train(self, epochs=20, early_stop=None):  # TODO: Add option for early stopping
+
+    def train(self, epochs=20, early_stop = None):  # TODO: Add option for early stopping should be added
         if self._model is None:
             raise AttributeError("No model has been compiled! Call '<ASLClassifier>.compile_model()'")
         return self._model.fit(self._data['train_set'], epochs=epochs, validation_data=self._data['test_set'])
@@ -141,6 +145,11 @@ class ASLClassifier(object):
     """
     Displays the statistics of the trained model (accuracy, confusion_matrix, classification report)
     """
-    def performance_report(self):
-        pass
+    def performance_report(self, prediction):
+
+        print('Classification report: \n', classification_report(prediction, self.test_set.classes))
+        print('Confusion_matrix: \n', confusion_matrix(prediction, self.test_set.classes))
+        sns.set(rc={'figure.figsize': (15, 8)})
+        sns.heatmap(confusion_matrix(prediction, self.test_set.classes), annot=True)
+
 
