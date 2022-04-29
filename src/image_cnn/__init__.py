@@ -18,6 +18,35 @@ class ASLClassifier(object):
             'train_set': [],
             'test_set': []
         }
+        self._categories = ['A',
+                            'B',
+                            'C',
+                            'D',
+                            'del',
+                            'E',
+                            'F',
+                            'G',
+                            'H',
+                            'I',
+                            'J',
+                            'K',
+                            'L',
+                            'M',
+                            'N',
+                            'nothing',
+                            'O',
+                            'P',
+                            'Q',
+                            'R',
+                            'S',
+                            'space',
+                            'T',
+                            'U',
+                            'V',
+                            'W',
+                            'X',
+                            'Y',
+                            'Z']
         self._model = None
         self._input_shape = None
         self._kernel_size = (5, 5)
@@ -35,6 +64,14 @@ class ASLClassifier(object):
     @property
     def model(self):
         return self._model
+
+    @property
+    def input_shape(self):
+        return self._input_shape
+
+    @property
+    def categories(self):
+        return self._categories
     # endregion
 
     """
@@ -95,17 +132,18 @@ class ASLClassifier(object):
     Creates and Compiles the model
     """
     def compile_model(self, seq_model=None, model_layers=None, model_optimizer='Adam'):
-        if self._input_shape is None:
-            raise AttributeError("No dataset has been loaded")
-
-        if seq_model is not None and layers is not None:
-            raise ValueError("<seq_model: keras.Sequential> and <layers: list> are mutually exclusive! Provide one or the other or neither.")
+        # if seq_model is not None and layers is not None:
+        #     raise ValueError("<seq_model: keras.Sequential> and <layers: list> are mutually exclusive! Provide one or the other or neither.")
 
         if seq_model is not None and isinstance(seq_model, Sequential):
             self._model = seq_model
+            self._input_shape = self._model.get_config()['layers'][0]['config']['batch_input_shape'][1:]
+            return
         elif layers is not None and isinstance(layers, list):
             self._model = Sequential(model_layers)
 
+        if self._input_shape is None:
+            raise AttributeError("No dataset has been loaded")
         else:
             # Without any alternative model being specified, default
             self._model = Sequential([
@@ -143,7 +181,9 @@ class ASLClassifier(object):
     Identify a provided image
     """
     def ident(self, img):
-        pass
+        pred = self._model.predict(img)
+        index = np.argmax(pred, axis=1)[0]
+        return self._categories[index], pred[0][index], pred[0]
 
 
     """
