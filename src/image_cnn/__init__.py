@@ -9,44 +9,109 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
+
+def asl_v1(input_shape, kernel_size=(3, 3)):
+    return Sequential([
+        layers.Conv2D(input_shape=input_shape, filters=16, kernel_size=kernel_size, activation='relu',
+                      padding='same'),
+        layers.Dropout(0.4),
+        layers.MaxPool2D(pool_size=(2, 2)),
+        layers.Conv2D(filters=32, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.Conv2D(filters=32, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.Conv2D(filters=32, kernel_size=kernel_size, activation='relu', padding='same'),
+
+        # layers.MaxPool2D(pool_size=(2, 2)),
+        layers.Dropout(0.4),
+        # block 2
+        layers.Conv2D(filters=64, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.Conv2D(filters=64, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.MaxPool2D(pool_size=(2, 2)),
+        layers.Dropout(0.4),
+        # block 3
+        layers.Conv2D(filters=64, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.Conv2D(filters=64, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.MaxPool2D(pool_size=(2, 2)),
+        layers.Dropout(0.4),
+        layers.Flatten(),
+        layers.Dense(128, activation='relu'),
+        layers.Dense(29, activation='sigmoid')
+    ])
+
+def asl_v2(input_shape, kernel_size=(3, 3)):
+    return Sequential([
+        layers.Conv2D(input_shape=input_shape, filters=16, kernel_size=kernel_size, activation='relu',
+                      padding='same'),
+        layers.Conv2D(input_shape=input_shape, filters=16, kernel_size=kernel_size, activation='relu',
+                      padding='same'),
+        layers.Conv2D(input_shape=input_shape, filters=16, kernel_size=kernel_size, activation='relu',
+                      padding='same'),
+        layers.Dropout(0.4),
+        layers.MaxPool2D(pool_size=(2, 2)),
+        layers.Conv2D(filters=32, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.Conv2D(filters=32, kernel_size=kernel_size, activation='relu', padding='same'),
+        layers.Conv2D(filters=32, kernel_size=kernel_size, activation='relu', padding='same'),
+
+        # layers.MaxPool2D(pool_size=(2, 2)),
+        layers.Dropout(0.4),
+        # block 2
+        # layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
+        # layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
+        # layers.MaxPool2D(pool_size=(2, 2)),
+        # layers.Dropout(0.4),
+        # block 3
+        # layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
+        # layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
+        # layers.MaxPool2D(pool_size=(2,2)),
+        # layers.Dropout(0.4),
+        layers.Flatten(),
+        layers.Dense(128, activation='relu'),
+        layers.Dense(29, activation='sigmoid')
+    ])
+
+
 class ASLClassifier(object):
     """
     creates the model object # TODO: Actually comment this
     """
-    def __init__(self):
+    def __init__(self, threads=0, categories=None):
+        # Configuring the number of threads to dedicate
+        if threads > 0:
+            tf.config.threading.set_inter_op_parallelism_threads(threads)
+            tf.config.threading.set_intra_op_parallelism_threads(threads)
+
         self._data = {
             'train_set': [],
             'test_set': []
         }
-        self._categories = ['A',
-                            'B',
-                            'C',
-                            'D',
-                            'del',
-                            'E',
-                            'F',
-                            'G',
-                            'H',
-                            'I',
-                            'J',
-                            'K',
-                            'L',
-                            'M',
-                            'N',
-                            'nothing',
-                            'O',
-                            'P',
-                            'Q',
-                            'R',
-                            'S',
-                            'space',
-                            'T',
-                            'U',
-                            'V',
-                            'W',
-                            'X',
-                            'Y',
-                            'Z']
+        if categories is None:
+            self._categories = ['A',
+                                'B',
+                                'C',
+                                'D',
+                                'del',
+                                'E',
+                                'F',
+                                'G',
+                                'H',
+                                'I',
+                                'J',
+                                'K',
+                                'L',
+                                'M',
+                                'N',
+                                'nothing',
+                                'O',
+                                'P',
+                                'Q',
+                                'R',
+                                'S',
+                                'space',
+                                'T',
+                                'U',
+                                'V',
+                                'W', 'X', 'Y', 'Z']
+        else:
+            self._categories = categories
         self._model = None
         self._input_shape = None
         self._kernel_size = (5, 5)
@@ -103,6 +168,7 @@ class ASLClassifier(object):
             class_mode='categorical',
             shuffle=True
         )
+
         # Getting the testing set
         self._data['test_set'] = img_gen.flow_from_directory(
             path_to_train,
@@ -146,26 +212,7 @@ class ASLClassifier(object):
             raise AttributeError("No dataset has been loaded")
         else:
             # Without any alternative model being specified, default
-            self._model = Sequential([
-                layers.Conv2D(input_shape=self._input_shape, filters=16, kernel_size=self._kernel_size, activation='relu', padding='same'),
-                layers.MaxPool2D(pool_size=(2, 2)),
-                layers.Dropout(0.4),
-                # block 1
-                layers.Conv2D(filters=32, kernel_size=self._kernel_size, activation='relu', padding='same'),
-                layers.MaxPool2D(pool_size=(2, 2)),
-                layers.Dropout(0.4),
-                # block 2
-                layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
-                layers.MaxPool2D(pool_size=(2, 2)),
-                layers.Dropout(0.4),
-                # block 3
-                layers.Conv2D(filters=64, kernel_size=self._kernel_size, activation='relu', padding='same'),
-                layers.MaxPool2D(pool_size=(2,2)),
-                layers.Dropout(0.4),
-                layers.Flatten(),
-                layers.Dense(128, activation='relu'),
-                layers.Dense(29, activation='sigmoid')
-            ])
+            self._model = asl_v1(self._input_shape)
         self._model.compile(loss='categorical_crossentropy', optimizer=model_optimizer, metrics=['accuracy'])
 
     """

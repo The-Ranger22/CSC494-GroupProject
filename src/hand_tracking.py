@@ -16,7 +16,7 @@ mpDraw = mp.solutions.drawing_utils
 class HandFinder:
     def __init__(self):
         self._hands = mphands.Hands()
-        self._pixel_offset = 10
+        self._pixel_offset = 20
 
     def detect(self, image, draw=True, bounding_box=True, skeleton=False):
         imageRGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

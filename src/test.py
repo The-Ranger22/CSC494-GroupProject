@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import cv2
 from tensorflow.image import resize
@@ -5,11 +7,12 @@ from tensorflow.keras.models import load_model
 from image_cnn import ASLClassifier
 from hand_tracking import HandFinder
 
-
 asl_clf64 = ASLClassifier()
 asl_clf64.compile_model(seq_model=load_model('asl_clf_64x64_10e.h5'))
-#asl_clf64.model.summary()
-cap = cv2.VideoCapture(0)
+asl_clf64.model.summary()
+cap = cv2.VideoCapture(2)  # use 2 for usb webcam
+if cap is None:
+    raise TypeError("Failed to find camera!")
 
 
 
@@ -31,10 +34,12 @@ while(True):
     try:
         hand_img, frame = hand_finder.detect(frame, skeleton=True)
         if img_counter > num_frames_to_wait:
+            hand_img = hand_img/255.
             hand_img = resize(hand_img, (64, 64), method='nearest').numpy()
+
             pred_cat, confidence, scores = asl_clf64.ident(hand_img.reshape(1, 64, 64, 3))
             print(confidence)
-            last_pred_val = f'Sign: \'{pred_cat}\'| Confidence: {confidence*100}%'
+            last_pred_val = f'Sign: \'{pred_cat}\'| Confidence: {confidence*100:.2f}%'
             img_counter = 0
     except:
         #import traceback
